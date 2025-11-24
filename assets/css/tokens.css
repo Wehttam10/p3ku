@@ -1,0 +1,40 @@
+/*
+ * Design Tokens: Centralized CSS Variables for P3ku Platform
+ * Based on WCAG AA 4.5:1 contrast requirement.
+ */
+
+:root {
+    /* --- 1. Colors --- */
+    --color-primary-green: #2F8F2F; /* Agriculture, Growth */
+    --color-primary-green-dark: #1e6d1e; /* For hover/active states */
+    --color-secondary-yellow: #F4C542; /* Friendly, CTA */
+    --color-neutral-slate: #455A64; /* Text, Headers, Secondary Buttons */
+    --color-background: #FAFAFA; /* Light background */
+    --color-white: #FFFFFF;
+    
+    /* System Feedback Colors */
+    --color-success: #28a745;
+    --color-error: #dc3545;
+    --color-warning: #F4C542;
+    
+    /* --- 2. Typography --- */
+    --font-heading: 'Poppins', 'Nunito', sans-serif; /* Accessible, rounded headings */
+    --font-body: 'Inter', 'Open Sans', sans-serif; /* Readable body text */
+    --font-size-base: 1rem;
+    --font-size-h1: 2.5rem;
+    --font-size-h2: 2rem;
+    --font-size-h3: 1.5rem;
+    
+    /* --- 3. Spacing Scale (4, 8, 12, 16, 24, 32, 48) --- */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+    
+    /* --- 4. Radius & Shadows --- */
+    --radius-soft: 12px; /* Child-friendly softness */
+    --radius-btn: 16px;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+}

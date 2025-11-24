@@ -1,0 +1,101 @@
+/*
+ * Component Library: Reusable styles based on Design Tokens
+ */
+
+/* --- Base & Reset (For clarity) --- */
+body {
+    font-family: var(--font-body);
+    color: var(--color-neutral-slate);
+    background-color: var(--color-background);
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--color-neutral-slate);
+    margin-bottom: var(--spacing-md);
+}
+
+/* --- 1. Buttons (Primary & Secondary) --- */
+.btn {
+    /* Enforce minimum touch target (48px) */
+    min-height: 48px; 
+    min-width: 48px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-btn);
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Always-visible focus indicator (WCAG AA) */
+    outline: 2px solid transparent; 
+    outline-offset: 2px;
+}
+
+.btn:focus-visible {
+    outline-color: var(--color-secondary-yellow);
+}
+
+.btn-primary {
+    background-color: var(--color-primary-green);
+    color: var(--color-white);
+    border: none;
+}
+.btn-primary:hover {
+    background-color: var(--color-primary-green-dark);
+}
+
+.btn-secondary {
+    background-color: var(--color-white);
+    color: var(--color-neutral-slate);
+    border: 2px solid var(--color-neutral-slate);
+}
+.btn-secondary:hover {
+    background-color: var(--color-background);
+}
+
+/* --- 2. Forms & Inputs --- */
+.form-control, select, textarea {
+    width: 100%;
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    border: 2px solid #ccc;
+    border-radius: var(--radius-soft);
+    box-sizing: border-box;
+    margin-bottom: var(--spacing-lg);
+    min-height: 48px; /* Enforce min height */
+}
+
+/* --- 3. Cards & Containers --- */
+.card {
+    background: var(--color-white);
+    border-radius: var(--radius-soft);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-xl);
+}
+
+/* --- 4. Alert Messages --- */
+.alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-soft);
+    font-weight: bold;
+    border-left: 5px solid;
+    /* Ensure high contrast for text inside alerts */
+}
+
+.alert-success {
+    background-color: #d4edda; /* Light green background */
+    color: #155724; /* Darker green text */
+    border-left-color: var(--color-success);
+}
+.alert-error {
+    background-color: #f8d7da; /* Light red background */
+    color: #721c24; /* Darker red text */
+    border-left-color: var(--color-error);
+}
