@@ -115,37 +115,34 @@ class Participant {
      */
     public function createParticipant($parent_id, $name, $pin, $sensory_details) {
         
-        // 1. CHECK FOR DUPLICATE PIN (Sibling Check)
-        // We check if THIS parent ($parent_id) already has a child with THIS pin ($pin)
+        // --- 1. CHECK GLOBALLY FOR DUPLICATE PIN ---
+        // We removed "AND parent_user_id = :pid"
+        // Now it checks if ANYONE in the database has this PIN.
         $check_query = "SELECT participant_id FROM " . $this->table_name . " 
-                        WHERE parent_user_id = :pid AND pin = :pin";
+                        WHERE pin = :pin";
         
         $stmt_check = $this->conn->prepare($check_query);
-        $stmt_check->bindParam(':pid', $parent_id);
         $stmt_check->bindParam(':pin', $pin);
         $stmt_check->execute();
 
         if ($stmt_check->rowCount() > 0) {
-            // Return an error string instead of false
-            return "Error: You have already used this PIN for another child. Please choose a unique PIN.";
+            // Return a clear error message to the parent
+            return "This PIN is already in use by another user in the system. Please choose a different 4-digit code.";
         }
 
-        // 2. PROCEED WITH CREATION
+        // --- 2. PROCEED WITH CREATION (The rest stays the same) ---
         $query = "INSERT INTO " . $this->table_name . " 
                   SET parent_user_id = :parent_id, 
                       name = :name, 
                       pin = :pin, 
                       sensory_details = :sensory_details, 
                       skill_level = 'Pending',
-                      is_active = 0"; // Default to inactive until Admin approves
+                      is_active = 0";
 
         $stmt = $this->conn->prepare($query);
 
-        // Sanitize inputs
         $name = htmlspecialchars(strip_tags($name));
         $sensory_details = htmlspecialchars(strip_tags($sensory_details));
-        // Note: PIN is stored as plain text for this project. 
-        // In a real app, you would hash it, but then you cannot easily check for duplicates.
 
         $stmt->bindParam(":parent_id", $parent_id);
         $stmt->bindParam(":name", $name);
@@ -154,7 +151,7 @@ class Participant {
 
         try {
             if ($stmt->execute()) {
-                return true; // Success
+                return true; 
             }
             return "Database save failed.";
         } catch (PDOException $e) {

@@ -54,7 +54,7 @@ $steps_json = json_encode($steps);
     <style>
         body { background-color: #E0F7FA; font-family: 'Comic Sans MS', sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
         header { background-color: #00BCD4; padding: 15px; text-align: center; color: white; position: relative;}
-        .back-btn { position: absolute; left: 15px; top: 15px; color: white; text-decoration: none; font-weight: bold; font-size: 1.2rem; border: 2px solid white; padding: 5px 10px; border-radius: 10px; }
+        .back-btn { position: absolute; left: 15px; top: 15px; color: black; text-decoration: none; font-weight: bold; font-size: 1.2rem; border: 2px solid black; padding: 5px 10px; border-radius: 10px; }
         .container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         .step-card { background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 100%; max-width: 600px; overflow: hidden; text-align: center; display: none; }
         .step-card.active { display: block; animation: popIn 0.3s ease-out; }
@@ -72,7 +72,7 @@ $steps_json = json_encode($steps);
 </head>
 <body>
     <header>
-        <a href="index.php" class="back-btn">❌ Quit</a>
+        <a href="index.php" class="back-btn" style="margin-top:60px;">❌ Quit</a>
         <h2 style="margin:0;"><?php echo htmlspecialchars($task_data['name']); ?></h2>
     </header>
 
