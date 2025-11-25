@@ -53,6 +53,7 @@ $admin_name = $_SESSION['user_name'] ?? 'Admin';
         /* CSS for summary cards and quick actions */
         main { padding: 20px; }
         h2 { color: #455A64; margin-bottom: 20px; }
+        a { text-decoration: none; color: #333; }
 
         /* Quick Action Grid */
         .quick-actions {
@@ -102,10 +103,8 @@ $admin_name = $_SESSION['user_name'] ?? 'Admin';
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="<?php echo BASE_URL; ?>admin/dashboard.php">Dashboard</a> | 
-            <a href="<?php echo BASE_URL; ?>admin/participants.php">Participants</a> | 
-            <a href="<?php echo BASE_URL; ?>admin/tasks.php">Tasks</a> |
-            
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"  style="font-size:24px;"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
             <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>

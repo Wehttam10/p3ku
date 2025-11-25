@@ -57,6 +57,7 @@ unset($_SESSION['error_message']);
     <title>Admin | Edit Task</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         .form-group { margin-bottom: 20px; }
         .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .step-container { border: 1px solid #F4C542; padding: 15px; margin-bottom: 15px; background-color: #fffff0; border-radius: 8px; position: relative; }

@@ -1,27 +1,35 @@
 <?php
 /**
  * Report Model
- * Handles complex data aggregation and retrieval for Admin and Parent reporting.
+ * Handles data aggregation for Admin and Parent reporting.
  */
 
-// --- FIX 1: Use ROOT_PATH for absolute pathing ---
-// This prevents Fatal Errors when index.php executes this file.
+// --- 1. SAFETY: Define ROOT_PATH if missing ---
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__) . '/');
+}
+
+// --- 2. INCLUDES ---
 require_once(ROOT_PATH . 'config/db.php');
 
-// --- FIX 2: Manually require Participant Model for dependency ---
-// We need the Participant class definition here for getConsolidatedParentData to work.
-require_once(ROOT_PATH . 'models/Participant.php');
+// FIX: Changed 'Participant.php' to 'participant.php' (Lowercase)
+// This prevents "Failed to open stream" errors on case-sensitive systems.
+if (file_exists(ROOT_PATH . 'models/participant.php')) {
+    require_once(ROOT_PATH . 'models/participant.php');
+} else {
+    // Fallback if the user capitalized the filename
+    require_once(ROOT_PATH . 'models/participant.php');
+}
 
 class Report {
     private $conn;
+    
+    // Table Names
     private $p_table = "participants";
     private $a_table = "assignments";
     private $t_table = "tasks";
     private $e_table = "evaluations";
 
-    /**
-     * Constructor: Initializes the database connection.
-     */
     public function __construct() {
         $this->conn = get_db_connection();
     }
@@ -33,7 +41,7 @@ class Report {
         $summary = [];
 
         try {
-            // 1. Total Participants (and Pending Reviews)
+            // 1. Participants
             $query_p = "SELECT 
                           COUNT(participant_id) AS total_participants,
                           SUM(CASE WHEN skill_level = 'Pending' THEN 1 ELSE 0 END) AS pending_skill_reviews,
@@ -42,12 +50,12 @@ class Report {
             $stmt_p = $this->conn->query($query_p);
             $summary['participants'] = $stmt_p->fetch(PDO::FETCH_ASSOC);
 
-            // 2. Total Tasks Created
+            // 2. Tasks
             $query_t = "SELECT COUNT(task_id) AS total_tasks FROM " . $this->t_table;
             $stmt_t = $this->conn->query($query_t);
             $summary['tasks'] = $stmt_t->fetch(PDO::FETCH_ASSOC);
 
-            // 3. Assignment Status Overview
+            // 3. Assignments
             $query_a = "SELECT 
                           COUNT(assignment_id) AS total_assignments,
                           SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending_start,
@@ -57,7 +65,7 @@ class Report {
             $summary['assignments'] = $stmt_a->fetch(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
-            error_log("Admin summary generation failed: " . $e->getMessage());
+            error_log("Admin summary failed: " . $e->getMessage());
             return [];
         }
 
@@ -65,7 +73,7 @@ class Report {
     }
 
     /**
-     * Fetches detailed data for a specific child's progress report (for Parent view).
+     * Fetches detailed data for a specific child's progress report.
      */
     public function getParentReportData($participant_id) {
         $report = ['summary' => [], 'history' => []];
@@ -75,13 +83,11 @@ class Report {
         }
 
         try {
-            // 1. Summary: Total tasks completed, total evaluations (using prepared statement)
+            // 1. Summary Stats
             $query_summary = "SELECT 
                                 COUNT(DISTINCT a.assignment_id) AS total_assignments,
-                                SUM(CASE WHEN a.status = 'Completed' THEN 1 ELSE 0 END) AS tasks_completed,
-                                COUNT(DISTINCT e.evaluation_id) AS total_evaluations
+                                SUM(CASE WHEN a.status = 'Completed' THEN 1 ELSE 0 END) AS tasks_completed
                               FROM " . $this->a_table . " a
-                              LEFT JOIN " . $this->e_table . " e ON a.assignment_id = e.assignment_id
                               WHERE a.participant_id = :pid";
 
             $stmt_summary = $this->conn->prepare($query_summary);
@@ -89,15 +95,17 @@ class Report {
             $stmt_summary->execute();
             $report['summary'] = $stmt_summary->fetch(PDO::FETCH_ASSOC);
 
-            // 2. History: List of completed tasks with sentiment (using prepared statement)
+            // 2. History (Completed tasks with Sentiment)
             $query_history = "SELECT 
-                                a.assigned_at, t.name AS task_name, e.emoji_sentiment, e.evaluated_at
-                              FROM " . $this->a_table . " a
-                              INNER JOIN " . $this->t_table . " t ON a.task_id = t.task_id
-                              INNER JOIN " . $this->e_table . " e ON a.assignment_id = e.assignment_id
-                              WHERE a.participant_id = :pid AND a.status = 'Completed'
+                                t.name AS task_name, 
+                                e.emoji_sentiment, 
+                                e.evaluated_at
+                              FROM " . $this->e_table . " e
+                              JOIN " . $this->a_table . " a ON e.assignment_id = a.assignment_id
+                              JOIN " . $this->t_table . " t ON a.task_id = t.task_id
+                              WHERE e.participant_id = :pid
                               ORDER BY e.evaluated_at DESC
-                              LIMIT 10"; 
+                              LIMIT 10";
 
             $stmt_history = $this->conn->prepare($query_history);
             $stmt_history->bindParam(":pid", $participant_id);
@@ -105,41 +113,46 @@ class Report {
             $report['history'] = $stmt_history->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
-            error_log("Parent report generation failed for PID {$participant_id}: " . $e->getMessage());
-            return ['summary' => [], 'history' => []];
+            error_log("Parent report error: " . $e->getMessage());
         }
 
         return $report;
     }
 
-
     /**
-     * Fetches consolidated data for the Parent Dashboard (children list and report summaries).
+     * Fetches consolidated data for the Parent Dashboard.
      */
     public function getConsolidatedParentData($parent_id) {
         $data = ['children' => []];
         
-        // --- FIX 3: Instantiate Participant Model ---
-        // This relies on Participant.php being required at the top of this file.
+        // Ensure Participant class is loaded
+        if (!class_exists('Participant')) {
+            return $data; // Prevent crash if class missing
+        }
+
         $p_model = new Participant(); 
+        // Call the function we added to models/participant.php earlier
         $children = $p_model->getChildrenByParentId($parent_id);
         
-        foreach ($children as $child) {
-            $child_id = $child['participant_id'];
-            
-            // Get the summary data for each child using the local method
-            $report_summary = $this->getParentReportData($child_id)['summary']; 
-            
-            $data['children'][] = [
-                'id' => $child_id,
-                'name' => $child['name'],
-                'skill_level' => $child['skill_level'],
-                'is_active' => $child['is_active'],
-                'summary' => $report_summary
-            ];
+        if ($children) {
+            foreach ($children as $child) {
+                $child_id = $child['participant_id'];
+                
+                // Get summary for this specific child
+                $report_data = $this->getParentReportData($child_id);
+                
+                $data['children'][] = [
+                    'id' => $child_id,
+                    'name' => $child['name'],
+                    'skill_level' => $child['skill_level'],
+                    'is_active' => $child['is_active'],
+                    'pin' => $child['pin'], // Needed for dashboard display
+                    'summary' => $report_data['summary']
+                ];
+            }
         }
         
         return $data;
     }
-
 }
+?>

@@ -1,30 +1,50 @@
 <?php
 /**
  * Admin Task Listing Page
- * Displays a list of all created tasks.
+ * Displays a list of all created tasks and allows deletion.
  */
 
-// --- 1. CONFIGURATION (Prevents Blank Pages) ---
+// --- 1. CONFIGURATION ---
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Define paths relative to this file
-define('ROOT_PATH', dirname(__DIR__) . '/');
-define('BASE_URL', '/p3ku-main/'); 
+if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__) . '/');
+if (!defined('BASE_URL')) define('BASE_URL', '/p3ku-main/'); 
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // --- 2. INCLUDES ---
-// Check if the model file actually exists before including to avoid fatal errors
 if (!file_exists(ROOT_PATH . 'models/task.php')) {
-    die("Error: Missing file 'models/task.php'. Please check your files.");
+    die("Error: Missing file 'models/task.php'.");
 }
 require_once(ROOT_PATH . 'models/task.php');
 
-// --- 3. DATA RETRIEVAL ---
+// --- 3. HANDLE DELETION LOGIC ---
+// Check if a delete request was made (e.g., tasks.php?delete_id=5)
+if (isset($_GET['delete_id'])) {
+    // Security Check
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        die("Access Denied");
+    }
+
+    $delete_id = intval($_GET['delete_id']);
+    $task_model = new Task();
+    
+    if ($task_model->deleteTask($delete_id)) {
+        $_SESSION['success_message'] = "Task deleted successfully!";
+    } else {
+        $_SESSION['error_message'] = "Failed to delete task.";
+    }
+    
+    // Redirect to clear the URL parameters
+    header("Location: tasks.php");
+    exit();
+}
+
+// --- 4. DATA RETRIEVAL ---
 try {
     $task_model = new Task();
     $tasks = $task_model->getAllTasks();
@@ -33,12 +53,10 @@ try {
     die("Database Error: " . $e->getMessage());
 }
 
-// Get and clear any session messages
+// Get and clear session messages
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
 unset($_SESSION['success_message'], $_SESSION['error_message']);
-
-// --- HTML Structure starts here ---
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -48,6 +66,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <title>Admin | Task List</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         /* Minimal styling */
         .header-actions { margin-bottom: 20px; text-align: right; }
         .btn-create { 
@@ -57,12 +76,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white;}
         .data-table th, .data-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         .data-table th { background-color: #455A64; color: white; }
+        
         .btn-action { 
             color: white; padding: 6px 10px; border-radius: 6px; 
             text-decoration: none; display: inline-block; font-size: 0.85rem; margin-right: 5px;
         }
         .btn-assign { background-color: #007bff; }
         .btn-edit { background-color: #28a745; }
+        .btn-delete { background-color: #dc3545; } /* Red for Delete */
+        
         .skill-cell { font-style: italic; font-size: 0.95rem; }
     </style>
 </head>
@@ -70,9 +92,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="<?php echo BASE_URL; ?>admin/dashboard.php">Dashboard</a> | 
-            <a href="<?php echo BASE_URL; ?>admin/participants.php">Participants</a> | 
-            <a href="<?php echo BASE_URL; ?>admin/tasks.php">Tasks</a> |
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 
@@ -80,12 +102,12 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         <h2>📋 Task Management</h2>
         
         <?php if ($success_message): ?>
-            <div class="alert-success" style="color: green; padding: 10px; border: 1px solid green; margin-bottom: 10px;">
+            <div class="alert-success" style="color: green; padding: 10px; border: 1px solid green; margin-bottom: 10px; background: #e8f5e9;">
                 <?php echo htmlspecialchars($success_message); ?>
             </div>
         <?php endif; ?>
         <?php if ($error_message): ?>
-            <div class="alert-error" style="color: red; padding: 10px; border: 1px solid red; margin-bottom: 10px;">
+            <div class="alert-error" style="color: red; padding: 10px; border: 1px solid red; margin-bottom: 10px; background: #ffebee;">
                 <?php echo htmlspecialchars($error_message); ?>
             </div>
         <?php endif; ?>
@@ -120,6 +142,12 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                    class="btn-action btn-assign">Assign</a>
                                 <a href="editTask.php?id=<?php echo $t['task_id']; ?>" 
                                    class="btn-action btn-edit">Edit</a>
+                                
+                                <a href="tasks.php?delete_id=<?php echo $t['task_id']; ?>" 
+                                   class="btn-action btn-delete"
+                                   onclick="return confirm('Are you sure you want to delete this task? This action cannot be undone.');">
+                                   Delete
+                                </a>
                             </td>
                         </tr>
                         <?php endforeach; ?>

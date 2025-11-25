@@ -7,21 +7,23 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// CORRECT PATH for the root file: Use __DIR__ (not dirname)
 define('ROOT_PATH', __DIR__ . '/');
 define('URL_ROOT', '/p3ku-main/');
 
 session_start();
 
-// --- 2. AUTHENTICATION LOGIC ---
-// We only load the Auth Controller here, NOT the Task model.
 if (file_exists(ROOT_PATH . 'controllers/authController.php')) {
     require_once(ROOT_PATH . 'controllers/authController.php');
 }
 
-// Clear any old error messages
+// --- 2. CAPTURE MESSAGES ---
+// Capture Error
 $error_message = $_SESSION['login_error'] ?? null;
 unset($_SESSION['login_error']);
+
+// ✅ NEW: Capture Success
+$success_message = $_SESSION['login_success'] ?? null;
+unset($_SESSION['login_success']);
 ?>
 
 <!DOCTYPE html>
@@ -32,41 +34,24 @@ unset($_SESSION['login_error']);
     <title>P3KU Platform - Login</title>
     <link rel="stylesheet" href="<?php echo URL_ROOT; ?>assets/css/style.css">
     <style>
+        /* ... (Keep your existing CSS) ... */
+        h1 { color: #fff; }
         body {
             font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
         }
-
         .login-container {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-width: 900px;
-            width: 100%;
-            display: flex;
-            overflow: hidden;
+            background: #fff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 900px; width: 100%; display: flex; overflow: hidden;
         }
-
         .welcome-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            padding: 60px 40px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            color: #fff; padding: 60px 40px; flex: 1; display: flex;
+            flex-direction: column; justify-content: center;
         }
-
-        .login-section {
-            padding: 60px 40px;
-            flex: 1;
-        }
-
+        .login-section { padding: 60px 40px; flex: 1; }
         .login-section h2 { margin-bottom: 30px; color: #333; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; color: #666; font-weight: 500;}
@@ -75,24 +60,20 @@ unset($_SESSION['login_error']);
             border-radius: 5px; font-size: 1em; box-sizing: border-box;
         }
         .btn {
-            width: 100%; padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff; border: none; border-radius: 5px;
-            font-size: 1.1em; cursor: pointer; transition: opacity 0.3s;
+            width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer;
         }
-        .btn:hover { opacity: 0.9; }
-
         .child-login-link { text-align: center; margin-top: 20px; }
         .child-login-link a {
-            color: #667eea; text-decoration: none; font-weight: bold;
-            font-size: 1.1rem; padding: 10px; border: 2px solid #667eea;
-            border-radius: 8px; display: inline-block; transition: all 0.3s;
+            color: #667eea; text-decoration: none; font-weight: bold; font-size: 1.1rem;
+            padding: 10px; border: 2px solid #667eea; border-radius: 8px; display: inline-block;
         }
-        .child-login-link a:hover { background-color: #667eea; color: white; }
-
-        @media (max-width: 768px) {
-            .login-container { flex-direction: column; }
-        }
+        
+        /* Message Styles */
+        .alert-error { background:#fee; color:#c33; padding:12px; border-radius:5px; margin-bottom:20px; }
+        .alert-success { background:#d4edda; color:#155724; padding:12px; border-radius:5px; margin-bottom:20px; border: 1px solid #c3e6cb; }
+        
+        @media (max-width: 768px) { .login-container { flex-direction: column; } }
     </style>
 </head>
 <body>
@@ -106,8 +87,14 @@ unset($_SESSION['login_error']);
     <div class="login-section">
         <h2>Admin / Parent Login</h2>
 
+        <?php if ($success_message): ?>
+            <div class="alert-success">
+                <?php echo htmlspecialchars($success_message); ?>
+            </div>
+        <?php endif; ?>
+
         <?php if ($error_message): ?>
-            <div style="background:#fee; color:#c33; padding:12px; border-radius:5px; margin-bottom:20px;">
+            <div class="alert-error">
                 <?php echo htmlspecialchars($error_message); ?>
             </div>
         <?php endif; ?>
@@ -130,6 +117,10 @@ unset($_SESSION['login_error']);
 
         <div class="child-login-link">
             <a href="<?php echo URL_ROOT; ?>participant/pinLogin.php">Child PIN Login →</a>
+        </div>
+        
+        <div style="text-align: center; margin-top: 15px;">
+            Don't have an account? <a href="register.php" style="color: #667eea; text-decoration: none;">Sign up here</a>
         </div>
     </div>
 </div>

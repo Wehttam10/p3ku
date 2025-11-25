@@ -389,4 +389,29 @@ class TaskController {
         }
         exit();
     }
+
+    public static function handleDeleteTask($get_data) {
+        // 1. Security Check
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: ' . BASE_URL . 'index.php');
+            exit();
+        }
+
+        $task_id = filter_var($get_data['id'] ?? null, FILTER_VALIDATE_INT);
+
+        if ($task_id) {
+            $task_model = new Task();
+            if ($task_model->deleteTask($task_id)) {
+                $_SESSION['success_message'] = "Task deleted successfully.";
+            } else {
+                $_SESSION['error_message'] = "Failed to delete task.";
+            }
+        } else {
+            $_SESSION['error_message'] = "Invalid Task ID.";
+        }
+
+        // Redirect back to task list
+        header('Location: ' . BASE_URL . 'admin/tasks.php');
+        exit();
+    }
 }

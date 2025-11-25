@@ -49,6 +49,7 @@ try {
     <title>Admin | Participant Management</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         /* Minimal CSS for Clarity */
         .table-container { overflow-x: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -77,9 +78,9 @@ try {
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="dashboard.php">Dashboard</a> | 
-            <a href="participants.php">Participants</a> | 
-            <a href="tasks.php">Tasks</a>
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 

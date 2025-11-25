@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>P3ku | Register New Child</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         .form-group { margin-bottom: 24px; }
         .form-group label {
             font-size: 1.1rem; font-weight: bold; display: block; margin-bottom: 8px; color: #455A64;
@@ -89,9 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <header>
         <h1>Parent Dashboard</h1>
         <nav>
-            <a href="dashboard.php">Dashboard</a> | 
-            <a href="register_child.php">Register Child</a> |
-            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: white;">Logout</a>
+            <a href="dashboard.php" style="font-weight:bold;">Dashboard</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red;">Logout</a>
         </nav>
     </header>
 

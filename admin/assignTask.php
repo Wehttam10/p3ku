@@ -59,6 +59,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <title>Admin | Assign Task</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         .task-info-box { border-left: 5px solid #2F8F2F; padding: 15px; background-color: #f0fff0; margin-bottom: 30px; border-radius: 4px;}
         .assignment-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
         .participant-item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; background: #fff; transition: 0.2s;}
@@ -72,8 +73,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="<?php echo BASE_URL; ?>admin/dashboard.php">Dashboard</a> |
-            <a href="<?php echo BASE_URL; ?>admin/tasks.php">Task List</a>
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 

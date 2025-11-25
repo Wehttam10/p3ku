@@ -57,6 +57,7 @@ $skill_levels = [
         /* Minimal styling for clarity and large input fields */
         .form-group { margin-bottom: 24px; }
         label { font-weight: bold; display: block; margin-bottom: 8px; }
+        a { text-decoration: none; color: #333; }
         .form-control, textarea, select { 
             width: 100%; 
             padding: 12px; 
@@ -98,8 +99,9 @@ $skill_levels = [
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="<?php echo BASE_URL; ?>admin/dashboard.php">Dashboard</a> | 
-            <a href="<?php echo BASE_URL; ?>admin/tasks.php">Task List</a>
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 

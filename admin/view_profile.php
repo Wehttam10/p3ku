@@ -86,6 +86,7 @@ $skill_levels = [
     <title>Admin | Review Profile</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
+        a { text-decoration: none; color: #333; }
         .profile-card { border: 1px solid #ccc; padding: 20px; border-radius: 12px; margin-bottom: 30px; background-color: #FAFAFA; }
         .details-section p { margin: 10px 0; }
         .details-section strong { display: inline-block; width: 150px; }
@@ -100,8 +101,9 @@ $skill_levels = [
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="dashboard.php">Dashboard</a> | 
-            <a href="participants.php">Participants</a>
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107;">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 

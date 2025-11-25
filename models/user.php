@@ -67,4 +67,41 @@ class User {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function emailExists($email) {
+        $query = "SELECT user_id FROM users WHERE email = :email";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Registers a new user (Parent).
+     */
+    public function registerUser($name, $email, $password, $role = 'parent') {
+        // 1. Check if email exists
+        if ($this->emailExists($email)) {
+            return "Email is already taken.";
+        }
+
+        // 2. Hash the password (Security Requirement)
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+        // 3. Insert into Database
+        $query = "INSERT INTO users (name, email, password_hash, role) 
+                  VALUES (:name, :email, :hash, :role)";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':hash', $password_hash);
+        $stmt->bindParam(':role', $role);
+
+        if ($stmt->execute()) {
+            return true; // Success
+        }
+        
+        return "Database error during registration.";
+    }
 }

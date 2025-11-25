@@ -1,21 +1,67 @@
 <?php
 /**
- * Admin Reports Dashboard (Final Version with Filters)
- * Displays interactive reports on task performance and participant sentiment.
+ * Admin Reports Page
  */
 
-require_once('../config/auth.php'); 
+// --- 1. CONFIGURATION ---
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-if (!is_admin()) {
-    check_access(ROLE_ADMIN, '/p3ku-main/');
+if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__) . '/');
+if (!defined('BASE_URL')) define('BASE_URL', '/p3ku-main/'); 
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Skill Level Definitions (for the filter dropdown)
+require_once(ROOT_PATH . 'config/auth.php'); 
+require_once(ROOT_PATH . 'models/task.php');
+
+// --- 2. SECURITY CHECK ---
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header("Location: " . BASE_URL . "index.php");
+    exit();
+}
+
+// --- 3. HANDLE FILTERS ---
+$status_filter = $_GET['status'] ?? 'all';
+$skill_filter = $_GET['skill'] ?? 'all';
+
+// --- 4. GET DATA ---
+$task_model = new Task();
+// Use the function getAllAssignmentDetails we wrote in models/task.php
+// If it's missing, I provided it in the "Final Model" code block earlier.
+$all_assignments = $task_model->getAllAssignmentDetails([
+    'status' => $status_filter,
+    'required_skill' => $skill_filter
+]);
+
+// --- 5. CALCULATE STATS ---
+$total_shown = count($all_assignments);
+$completed_count = 0;
+$happy_count = 0;
+
+foreach ($all_assignments as $a) {
+    if ($a['status'] === 'Completed') $completed_count++;
+    if (!empty($a['emoji_sentiment']) && $a['emoji_sentiment'] === 'happy') $happy_count++;
+}
+
+// Helper for Emojis
+function getEmoji($sentiment) {
+    switch ($sentiment) {
+        case 'happy': return '😊';
+        case 'neutral': return '😐';
+        case 'hard': return '😓';
+        default: return '—';
+    }
+}
+
+// Skill Level Definitions for Dropdown
 $skill_levels = [
-    'Level 1: Basic Visual (Red)' => 'Level 1: Basic Visual Tasks',
-    'Level 2: Simple Steps (Yellow)' => 'Level 2: Simple Multi-Step Tasks',
-    'Level 3: Guided Independence (Blue)' => 'Level 3: Guided Independent Tasks',
-    'Level 4: Full Independence (Green)' => 'Level 4: Fully Independent Tasks'
+    'Level 1: Basic Visual (Red)' => 'Level 1: Basic Visual',
+    'Level 2: Simple Steps (Yellow)' => 'Level 2: Simple Steps',
+    'Level 3: Guided Independence (Blue)' => 'Level 3: Guided',
+    'Level 4: Full Independence (Green)' => 'Level 4: Independent'
 ];
 ?>
 <!DOCTYPE html>
@@ -23,198 +69,130 @@ $skill_levels = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Detailed Reports</title>
-    <link rel="stylesheet" href="../assets/css/style.css"> 
+    <title>Admin | Reports</title>
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css"> 
     <style>
-        /* [Existing CSS styles from previous step] */
-        .report-section { margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .filter-group { display: flex; gap: 20px; margin-bottom: 15px; align-items: center; }
-        .filter-control { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        /* ... other table/status styles ... */
+        a { text-decoration: none; color: #333; }
+
+        .filter-bar { 
+            background: white; padding: 20px; border-radius: 12px; 
+            display: flex; gap: 15px; align-items: flex-end; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #555; }
+        .filter-control { padding: 10px; border: 1px solid #ccc; border-radius: 6px; min-width: 200px; }
+        .btn-filter { 
+            background-color: #2F8F2F; color: white; padding: 10px 20px; 
+            border: none; border-radius: 6px; cursor: pointer; font-weight: bold; height: 40px;
+        }
+        
+        .summary-section { display: flex; gap: 20px; margin-bottom: 30px; }
+        .summary-box { 
+            flex: 1; background: white; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #ccc;
+        }
+        .summary-box h4 { margin: 0; color: #666; font-size: 0.9rem; }
+        .summary-box .val { font-size: 2rem; font-weight: bold; color: #333; margin-top: 5px; }
+        
+        .data-table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .data-table th { background-color: #455A64; color: white; }
+        
+        .status-Completed { color: green; font-weight: bold; }
+        .status-Pending { color: orange; font-weight: bold; }
+        .status-InProgress { color: blue; font-weight: bold; }
     </style>
 </head>
 <body>
     <header>
         <h1>Admin Dashboard</h1>
         <nav>
-            <a href="/p3ku-main/admin/dashboard">Dashboard</a> | 
-            <a href="/p3ku-main/admin/participants">Participants</a> | 
-            <a href="/p3ku-main/admin/tasks">Task List</a> |
-            <a href="/p3ku-main/logout" class="btn btn-secondary" style="margin-left: auto;">Logout</a>
+            <a href="<?php echo BASE_URL; ?>admin/dashboard.php"><b>Dashboard</b></a> | 
+            <a href="reports.php" style="font-weight:bold; color:#FFC107; font-size:24px">Reports</a> |
+            <a href="<?php echo BASE_URL; ?>controllers/authController.php?logout=1" style="color: red; font-weight: bold;">Logout</a> 
         </nav>
     </header>
 
     <main>
-        <h2>📈 Detailed Performance and Sentiment Reports</h2>
-        
-        <p class="breadcrumbs">Admin > Reports</p>
+        <h2>📈 Detailed Reports</h2>
 
-        <div class="report-section">
-            <h3>Overall Sentiment & Completion Rates</h3>
-            <div id="summary-metrics" style="display: flex; gap: 20px;">
-                <p id="loading-summary">Loading summary metrics...</p>
+        <div class="summary-section">
+            <div class="summary-box" style="border-left-color: #F4C542;">
+                <h4>Total Assignments Shown</h4>
+                <div class="val"><?php echo $total_shown; ?></div>
+            </div>
+            <div class="summary-box" style="border-left-color: #2F8F2F;">
+                <h4>Completed</h4>
+                <div class="val"><?php echo $completed_count; ?></div>
+            </div>
+            <div class="summary-box" style="border-left-color: #2196F3;">
+                <h4>Happy Feedback 😊</h4>
+                <div class="val"><?php echo $happy_count; ?></div>
             </div>
         </div>
 
-        <div class="report-section">
-            <h3>All Assignment Data</h3>
+        <form action="" method="GET" class="filter-bar">
+            <div class="filter-group">
+                <label>Filter by Status:</label>
+                <select name="status" class="filter-control">
+                    <option value="all">-- All Statuses --</option>
+                    <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                    <option value="In Progress" <?php echo $status_filter === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
+                    <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>Completed</option>
+                </select>
+            </div>
             
             <div class="filter-group">
-                <div>
-                    <label for="status-filter">Filter by Status:</label>
-                    <select id="status-filter" class="filter-control">
-                        <option value="all">-- All Statuses --</option>
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Canceled">Canceled</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="skill-filter">Filter by Required Skill:</label>
-                    <select id="skill-filter" class="filter-control">
-                        <option value="all">-- All Skills --</option>
-                        <?php foreach ($skill_levels as $value => $label): ?>
-                            <option value="<?php echo htmlspecialchars($value); ?>">
-                                <?php echo htmlspecialchars($label); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button id="apply-filters-btn" class="btn btn-primary" style="align-self: flex-end; padding: 8px 15px;">Apply Filters</button>
+                <label>Filter by Skill Level:</label>
+                <select name="skill" class="filter-control">
+                    <option value="all">-- All Skills --</option>
+                    <?php foreach ($skill_levels as $val => $label): ?>
+                        <option value="<?php echo htmlspecialchars($val); ?>" <?php echo $skill_filter === $val ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Task Name</th>
-                            <th>Participant</th>
-                            <th>P. Skill</th>
-                            <th>Req. Skill</th>
-                            <th>Status</th>
-                            <th>Sentiment</th>
-                            <th>Assigned Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="assignment-data-body">
-                        <tr><td colspan="7">Loading data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+            <button type="submit" class="btn-filter">Apply Filters</button>
+            <a href="reports.php" style="margin-left: 10px; color: #666; align-self: center;">Reset</a>
+        </form>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th>Task Name</th>
+                    <th>Required Skill</th>
+                    <th>Status</th>
+                    <th>Feedback</th>
+                    <th>Assigned Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($total_shown > 0): ?>
+                    <?php foreach ($all_assignments as $row): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['participant_name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['task_name']); ?></td>
+                        <td><small><?php echo htmlspecialchars($row['required_skill']); ?></small></td>
+                        <td class="status-<?php echo str_replace(' ', '', $row['status']); ?>">
+                            <?php echo htmlspecialchars($row['status']); ?>
+                        </td>
+                        <td style="font-size: 1.5rem; text-align: center;">
+                            <?php echo getEmoji($row['emoji_sentiment'] ?? ''); ?>
+                        </td>
+                        <td><?php echo date("Y-m-d", strtotime($row['assigned_at'])); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px;">No data found matching your filters.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dataBody = document.getElementById('assignment-data-body');
-            const statusFilter = document.getElementById('status-filter');
-            const skillFilter = document.getElementById('skill-filter');
-            const applyButton = document.getElementById('apply-filters-btn');
-            const summaryMetrics = document.getElementById('summary-metrics');
-            let allAssignmentsData = []; // Store the full data set (unfiltered)
-
-            // --- 1. Data Fetching and Initialization ---
-            
-            function fetchAssignmentData(filters = {}) {
-                dataBody.innerHTML = `<tr><td colspan="7">Fetching data...</td></tr>`;
-                summaryMetrics.innerHTML = `<p>Loading summary metrics...</p>`;
-                
-                // Construct query string from filters
-                const params = new URLSearchParams(filters).toString();
-                const url = '/p3ku-main/api/get_tasks.php?' + params;
-
-                fetch(url)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok, status: ' + response.status);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // Only store full, unfiltered data if fetching the initial "all"
-                            if (filters.status === 'all' && filters.skill === 'all') {
-                                allAssignmentsData = data.data;
-                            }
-                            
-                            // Calculate metrics and render based on the received (filtered) data
-                            calculateAndDisplaySummary(data.data);
-                            renderTable(data.data);
-                        } else {
-                            dataBody.innerHTML = `<tr><td colspan="7">Error loading data: ${data.message}</td></tr>`;
-                            summaryMetrics.innerHTML = `<p style="color:red;">Error loading summary.</p>`;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('API Error:', error);
-                        dataBody.innerHTML = '<tr><td colspan="7">Failed to connect to the reporting API.</td></tr>';
-                    });
-            }
-
-            // --- 2. Rendering Functions (Slightly simplified for brevity) ---
-
-            function calculateAndDisplaySummary(data) {
-                // [Existing logic to calculate and render metrics into summaryMetrics]
-                let totalCompleted = data.filter(a => a.status === 'Completed').length;
-                let totalAssignments = data.length;
-                let positiveSentiments = data.filter(a => a.emoji_sentiment === 'happy' || a.emoji_sentiment === 'calm').length;
-                
-                summaryMetrics.innerHTML = `
-                    <div class="summary-card" style="border-left-color: var(--color-primary-green);">
-                        <div class="value">${totalCompleted} / ${totalAssignments}</div>
-                        <h4>Tasks Completed Ratio (Filtered)</h4>
-                    </div>
-                    <div class="summary-card" style="border-left-color: var(--color-secondary-yellow);">
-                        <div class="value">${data.length}</div>
-                        <h4>Total Assignments Shown</h4>
-                    </div>
-                    <div class="summary-card" style="border-left-color: var(--color-neutral-slate);">
-                        <div class="value">👍 ${positiveSentiments}</div>
-                        <h4>Positive Sentiments (Filtered)</h4>
-                    </div>
-                `;
-            }
-
-            function renderTable(data) {
-                // [Existing logic to render the table rows into dataBody]
-                if (data.length === 0) {
-                    dataBody.innerHTML = `<tr><td colspan="7">No assignments found matching the current filters.</td></tr>`;
-                    return;
-                }
-                 // ... (mapping logic remains the same) ...
-                 dataBody.innerHTML = data.map(a => {
-                    const statusClass = 'status-' + a.status.replace(/\s/g, '-');
-                    const sentiment = a.emoji_sentiment ? (a.emoji_sentiment.charAt(0).toUpperCase() + a.emoji_sentiment.slice(1)) : '—';
-                    return `
-                        <tr>
-                            <td>${a.task_name}</td>
-                            <td>${a.participant_name}</td>
-                            <td>${a.participant_skill}</td>
-                            <td>${a.required_skill}</td>
-                            <td><span class="status-tag ${statusClass}">${a.status}</span></td>
-                            <td>${sentiment}</td>
-                            <td>${new Date(a.assigned_at).toLocaleDateString()}</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // --- 3. Event Listeners ---
-            
-            // Listen for the button click to apply filters
-            applyButton.addEventListener('click', function() {
-                const filters = {
-                    status: statusFilter.value,
-                    skill: skillFilter.value
-                };
-                fetchAssignmentData(filters);
-            });
-
-            // --- Initial Load ---
-            // Load all data on page load
-            fetchAssignmentData({status: 'all', skill: 'all'});
-        });
-    </script>
 </body>
 </html>
