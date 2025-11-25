@@ -114,21 +114,38 @@ class Participant {
      * Registers a new participant (Used in future Parent Dashboard)
      */
     public function createParticipant($parent_id, $name, $pin, $sensory_details) {
-        // NOTE: For now we store Plain Text PINs to match your testing data.
-        // In production, change this line to: $pin = password_hash($pin, PASSWORD_DEFAULT);
         
+        // 1. CHECK FOR DUPLICATE PIN (Sibling Check)
+        // We check if THIS parent ($parent_id) already has a child with THIS pin ($pin)
+        $check_query = "SELECT participant_id FROM " . $this->table_name . " 
+                        WHERE parent_user_id = :pid AND pin = :pin";
+        
+        $stmt_check = $this->conn->prepare($check_query);
+        $stmt_check->bindParam(':pid', $parent_id);
+        $stmt_check->bindParam(':pin', $pin);
+        $stmt_check->execute();
+
+        if ($stmt_check->rowCount() > 0) {
+            // Return an error string instead of false
+            return "Error: You have already used this PIN for another child. Please choose a unique PIN.";
+        }
+
+        // 2. PROCEED WITH CREATION
         $query = "INSERT INTO " . $this->table_name . " 
                   SET parent_user_id = :parent_id, 
                       name = :name, 
                       pin = :pin, 
                       sensory_details = :sensory_details, 
                       skill_level = 'Pending',
-                      is_active = 0";
+                      is_active = 0"; // Default to inactive until Admin approves
 
         $stmt = $this->conn->prepare($query);
 
+        // Sanitize inputs
         $name = htmlspecialchars(strip_tags($name));
         $sensory_details = htmlspecialchars(strip_tags($sensory_details));
+        // Note: PIN is stored as plain text for this project. 
+        // In a real app, you would hash it, but then you cannot easily check for duplicates.
 
         $stmt->bindParam(":parent_id", $parent_id);
         $stmt->bindParam(":name", $name);
@@ -136,10 +153,13 @@ class Participant {
         $stmt->bindParam(":sensory_details", $sensory_details);
 
         try {
-            return $stmt->execute();
+            if ($stmt->execute()) {
+                return true; // Success
+            }
+            return "Database save failed.";
         } catch (PDOException $e) {
             error_log("Participant creation failed: " . $e->getMessage());
-            return false;
+            return "System Error: " . $e->getMessage();
         }
     }
 

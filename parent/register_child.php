@@ -35,25 +35,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pin = trim($_POST['child_pin'] ?? '');
     $sensory = trim($_POST['sensory_details'] ?? '');
     
-    // Basic Validation
     if (empty($name) || empty($pin) || empty($sensory)) {
         $error_message = "All fields are required.";
     } elseif (strlen($pin) !== 4 || !ctype_digit($pin)) {
         $error_message = "PIN must be exactly 4 digits.";
     } else {
-        // Init Model
         $model = new Participant();
         
-        // Attempt to create the child record linked to this parent
-        // $_SESSION['user_id'] comes from the login
+        // Call the function
         $result = $model->createParticipant($_SESSION['user_id'], $name, $pin, $sensory);
         
-        if ($result) {
-            $success_message = "Child registered successfully! They will appear as 'Pending' until an Admin activates them.";
-            // Optional: Clear form data so it doesn't resubmit
-            $name = $pin = $sensory = ''; 
+        // Logic: If TRUE, it worked. If STRING, it's an error message.
+        if ($result === true) {
+            $success_message = "Child registered successfully! Pending Admin activation.";
+            $name = $pin = $sensory = ''; // Clear form
         } else {
-            $error_message = "Database Error: Could not register child. Please try again.";
+            // Show the specific error (e.g., "PIN already used")
+            $error_message = $result;
         }
     }
 }
