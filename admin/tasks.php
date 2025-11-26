@@ -23,26 +23,22 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 // --- 3. INCLUDES ---
-// Ensure the model file exists
 if (!file_exists(ROOT_PATH . 'models/task.php')) {
     die("Error: Missing file models/task.php");
 }
 require_once(ROOT_PATH . 'models/task.php');
 
 // --- 4. HANDLE DELETE REQUEST ---
-// This block runs if you click the "Delete" button
 if (isset($_GET['delete_id'])) {
     $delete_id = intval($_GET['delete_id']);
     $task_model = new Task();
-    
-    // Call the delete function
+
     if ($task_model->deleteTask($delete_id)) {
         $_SESSION['success_message'] = "Task deleted successfully!";
     } else {
         $_SESSION['error_message'] = "Failed to delete task. Check database logs.";
     }
     
-    // Refresh page to clear the URL parameters
     header("Location: tasks.php");
     exit();
 }
@@ -56,7 +52,6 @@ try {
     die("Database Error: " . $e->getMessage());
 }
 
-// Get messages
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
 unset($_SESSION['success_message'], $_SESSION['error_message']);
@@ -78,7 +73,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         .data-table th, .data-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         .data-table th { background-color: #455A64; color: white; }
         
-        /* Button Styles */
         .btn-action { 
             padding: 6px 10px; border-radius: 6px; text-decoration: none; 
             color: white; margin-right: 5px; font-size: 0.8rem; display: inline-block;
@@ -86,7 +80,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         .btn-assign { background-color: #007bff; }
         .btn-edit { background-color: #28a745; }
         
-        /* RED DELETE BUTTON */
         .btn-delete { background-color: #dc3545; }
         .btn-delete:hover { background-color: #c82333; }
         

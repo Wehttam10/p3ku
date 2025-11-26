@@ -316,14 +316,8 @@ class Task {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * ✅ NEW: Delete a specific assignment.
-     */
     public function deleteAssignment($assignment_id) {
         try {
-            // We delete from 'assignments'. 
-            // Due to ON DELETE CASCADE in SQL, this will also auto-remove 
-            // any linked evaluations if they exist.
             $query = "DELETE FROM assignments WHERE assignment_id = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':id', $assignment_id);

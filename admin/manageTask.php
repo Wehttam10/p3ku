@@ -31,21 +31,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 // --- 4. GET DATA ---
 $model = new Task();
 
-// FIX: Use the existing general function, then filter for active ones
-// This ensures compatibility with the "Ultimate" Task Model
 $all_data = $model->getAllAssignmentDetails(); 
 
 $assignments = [];
 if (!empty($all_data)) {
     foreach ($all_data as $row) {
-        // Only show Pending or In Progress tasks (Active)
         if ($row['status'] === 'Pending' || $row['status'] === 'In Progress') {
             $assignments[] = $row;
         }
     }
 }
 
-// Get messages
 $success_message = $_SESSION['success_message'] ?? null;
 $error_message = $_SESSION['error_message'] ?? null;
 unset($_SESSION['success_message'], $_SESSION['error_message']);

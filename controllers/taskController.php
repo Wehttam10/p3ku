@@ -19,9 +19,6 @@ require_once(ROOT_PATH . 'config/auth.php');
 
 class TaskController {
 
-    /**
-     * 1. Create Task
-     */
     public static function handleCreateTask($post_data, $file_data) { 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . BASE_URL . 'admin/createTask.php'); 
@@ -109,9 +106,6 @@ class TaskController {
         }
     }
 
-    /**
-     * 2. Assign Task
-     */
     public static function handleAssignment($post_data) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'index.php');
@@ -147,9 +141,6 @@ class TaskController {
         exit();
     }
 
-    /**
-     * 3. Update Task
-     */
     public static function handleUpdateTask($post_data, $file_data) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'index.php');
@@ -222,9 +213,6 @@ class TaskController {
         exit();
     }
 
-    /**
-     * 4. Submit Feedback
-     */
     public static function handleSubmitEvaluation($post_data) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'participant') {
              header('Location: ' . BASE_URL . 'participant/pinLogin.php'); 
@@ -246,16 +234,12 @@ class TaskController {
         if ($success) {
             header('Location: ' . BASE_URL . 'participant/index.php'); 
         } else {
-             // Generic error message if DB fails
              $_SESSION['error_message'] = "Error saving evaluation.";
              header('Location: ' . BASE_URL . 'participant/doTask.php?assignment_id=' . $assignment_id); 
         }
         exit();
     }
 
-    /**
-     * 5. Delete Task (From Library)
-     */
     public static function handleDeleteTask($get_data) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'index.php');
@@ -279,9 +263,6 @@ class TaskController {
         exit();
     }
 
-    /**
-     * 6. Delete Assignment (From Active List)
-     */
     public static function handleDeleteAssignment($get_data) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'index.php');
@@ -301,14 +282,10 @@ class TaskController {
             $_SESSION['error_message'] = "Invalid Assignment ID.";
         }
 
-        // ✅ FIXED: Redirect to manageTask.php (not manage_assignments.php)
         header('Location: ' . BASE_URL . 'admin/manageTask.php');
         exit();
     }
 
-    /**
-     * ✅ HELPER: Image Upload Logic
-     */
     private static function handleStepImageUpload($file_array, &$error_msg = "") {
         if ($file_array['error'] !== UPLOAD_ERR_OK) {
             $error_msg = "PHP Upload Error Code: " . $file_array['error'];
